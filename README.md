@@ -6,10 +6,6 @@ This is a plugin for the [Glyphs font editor](http://glyphsapp.com/) by Georg Se
 
 Installation of this filter will add the menu item *Filter > Fix Zero Handles*. You can set a keyboard shortcut in System Preferences.
 
-### Requirements
-
-The filter needs Glyphs 1.4.3 or higher, running on OS X 10.7 or later. I tested it on OS X 10.9 only, and I assume it will not work in versions of Mac OS X older than 10.7.
-
 ### Installation
 
 1. Download the complete ZIP file and unpack it, or clone the repository.
@@ -27,6 +23,10 @@ Alternatively, you can also use it as a custom parameter in an instance:
 	Value: GlyphsFilterFixZeroHandles;
 
 At the end of the parameter value, you can hang `exclude:` or `include:`, followed by a comma-separated list of glyph names. This will apply the filter only to the included glyphs, or the glyphs not excluded, respectively.
+
+### Requirements
+
+The plugin needs Glyphs 1.4.3 or higher, running on OS X 10.7 or later. I can only test it in current OS versions, and I assume it will not work in versions of Mac OS X older than 10.7.
 
 ### License
 
