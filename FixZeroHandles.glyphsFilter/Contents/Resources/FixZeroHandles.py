@@ -85,19 +85,19 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 			for thisPath in thisLayer.paths:
 				numOfNodes = len( thisPath.nodes )
 				nodeIndexes = range( numOfNodes )
-		
+				
 				for i in nodeIndexes:
 					thisNode = thisPath.nodes[i]
-			
+					
 					if (thisNode in selection or not selectionCounts) and thisNode.type == 65:
 						if thisPath.nodes[i-1].type == 65:
 							segmentNodeIndexes = [ i-2, i-1, i, i+1 ]
 						else:
 							segmentNodeIndexes = [ i-1, i, i+1, i+2 ]
-				
+						
 						for x in range(len(segmentNodeIndexes)):
 							segmentNodeIndexes[x] = segmentNodeIndexes[x] % numOfNodes
-				
+						
 						thisSegment = [ [n.x, n.y] for n in [ thisPath.nodes[i] for i in segmentNodeIndexes ] ]
 						newHandles = self.tunnify( thisSegment )
 						if newHandles:
@@ -106,10 +106,11 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 							thisPath.nodes[ segmentNodeIndexes[1] ].y = yHandle1
 							thisPath.nodes[ segmentNodeIndexes[2] ].x = xHandle2
 							thisPath.nodes[ segmentNodeIndexes[2] ].y = yHandle2
-			return True
+			return True, None
 		except Exception as e:
-			self.logToConsole( "processLayer: %s" % str(e) )
-			return False
+			Error = NSError.errorWithDomain_code_userInfo_(self.title(), 123, {"NSLocalizedDescription": "Problem with " + self.title(), "NSLocalizedRecoverySuggestion" : str(e) })
+			return False, Error
+		return True, None
 	
 	def xyAtPercentageBetweenTwoPoints( self, firstPoint, secondPoint, percentage ):
 		"""
@@ -164,9 +165,14 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 			for k in range(len(Layers)):
 				Layer = Layers[k]
 				Layer.clearSelection()
-				self.processLayer( Layer, False )
+				Return, Error = self.processLayer( Layer, False )
+				if not Return:
+					return Return, Error
 		except Exception as e:
 			self.logToConsole( "runFilterWithLayers_error_: %s" % str(e) )
+			Error = NSError.errorWithDomain_code_userInfo_(self.title(), 123, {"NSLocalizedDescription": "Problem with " + self.title(), "NSLocalizedRecoverySuggestion" : str(e) })
+			return False, Error
+		return True, None
 	
 	def runFilterWithLayer_options_error_( self, Layer, Options, Error ):
 		"""
@@ -177,6 +183,9 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 			return self.runFilterWithLayer_error_( self, Layer, Error )
 		except Exception as e:
 			self.logToConsole( "runFilterWithLayer_options_error_: %s" % str(e) )
+			Error = NSError.errorWithDomain_code_userInfo_(self.title(), 123, {"NSLocalizedDescription": "Problem with " + self.title(), "NSLocalizedRecoverySuggestion" : str(e) })
+			return False, Error
+		return True, None
 	
 	def runFilterWithLayer_error_( self, Layer, Error ):
 		"""
@@ -187,6 +196,9 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 			return self.processLayer( Layer, True )
 		except Exception as e:
 			self.logToConsole( "runFilterWithLayer_error_: %s" % str(e) )
+			Error = NSError.errorWithDomain_code_userInfo_(self.title(), 1, {"NSLocalizedDescription": "Problem with " + self.title(), "NSLocalizedRecoverySuggestion" : str(e) })
+			return False, Error
+		return True, None
 	
 	def processFont_withArguments_( self, Font, Arguments ):
 		"""
@@ -212,7 +224,10 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 			FontMasterId = Font.fontMasterAtIndex_(0).id
 			for thisGlyph in glyphList:
 				Layer = thisGlyph.layerForKey_( FontMasterId )
-				self.processLayer( Layer, False )
+				Return, Error = self.processLayer( Layer, False )
+				if not Return:
+					return
+				
 		except Exception as e:
 			self.logToConsole( "processFont_withArguments_: %s" % str(e) )
 	
