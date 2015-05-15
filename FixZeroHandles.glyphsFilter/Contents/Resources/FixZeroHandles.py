@@ -170,6 +170,7 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 					return Return, Error
 		except Exception as e:
 			self.logToConsole( "runFilterWithLayers_error_: %s" % str(e) )
+<<<<<<< HEAD
 			Error = NSError.errorWithDomain_code_userInfo_(self.title(), 123, {"NSLocalizedDescription": "Problem with " + self.title(), "NSLocalizedRecoverySuggestion" : str(e) })
 			return False, Error
 		return True, None
@@ -187,6 +188,9 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 			return False, Error
 		return True, None
 	
+=======
+			
+>>>>>>> parent of 1989644... Compatibility with v702+
 	def runFilterWithLayer_error_( self, Layer, Error ):
 		"""
 		Invoked when user triggers the filter through the Filter menu
