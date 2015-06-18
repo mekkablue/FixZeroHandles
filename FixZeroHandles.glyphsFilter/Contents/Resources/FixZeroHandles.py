@@ -39,7 +39,7 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 		try:
 			self._controller = Controller
 		except Exception as e:
-			self.logToConsole( "setController_: %s" % str(e) )
+			self.logToConsoleAndError( "setController_: %s" % str(e) )
 	
 	def controller( self ):
 		"""
@@ -48,7 +48,7 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 		try:
 			return self._controller
 		except Exception as e:
-			self.logToConsole( "controller: %s" % str(e) )
+			self.logToConsoleAndError( "controller: %s" % str(e) )
 		
 	def setup( self ):
 		"""
@@ -57,7 +57,7 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 		try:
 			return None
 		except Exception as e:
-			self.logToConsole( "setup: %s" % str(e) )
+			self.logToConsoleAndError( "setup: %s" % str(e) )
 	
 	def title( self ):
 		"""
@@ -72,45 +72,7 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 		Users can set their own shortcuts in System Prefs.
 		"""
 		return None
-	
-	def processLayer( self, thisLayer, selectionCounts ):
-		"""
-		Each selected layer is processed here.
-		"""
-		try:
-			selection = thisLayer.selection()
-			if selection == (): #empty selection
-				selectionCounts = False
-			
-			for thisPath in thisLayer.paths:
-				numOfNodes = len( thisPath.nodes )
-				nodeIndexes = range( numOfNodes )
 		
-				for i in nodeIndexes:
-					thisNode = thisPath.nodes[i]
-			
-					if (thisNode in selection or not selectionCounts) and thisNode.type == 65:
-						if thisPath.nodes[i-1].type == 65:
-							segmentNodeIndexes = [ i-2, i-1, i, i+1 ]
-						else:
-							segmentNodeIndexes = [ i-1, i, i+1, i+2 ]
-				
-						for x in range(len(segmentNodeIndexes)):
-							segmentNodeIndexes[x] = segmentNodeIndexes[x] % numOfNodes
-				
-						thisSegment = [ [n.x, n.y] for n in [ thisPath.nodes[i] for i in segmentNodeIndexes ] ]
-						newHandles = self.tunnify( thisSegment )
-						if newHandles:
-							xHandle1, yHandle1, xHandle2, yHandle2 = newHandles
-							thisPath.nodes[ segmentNodeIndexes[1] ].x = xHandle1
-							thisPath.nodes[ segmentNodeIndexes[1] ].y = yHandle1
-							thisPath.nodes[ segmentNodeIndexes[2] ].x = xHandle2
-							thisPath.nodes[ segmentNodeIndexes[2] ].y = yHandle2
-			return True
-		except Exception as e:
-			self.logToConsole( "processLayer: %s" % str(e) )
-			return False
-	
 	def xyAtPercentageBetweenTwoPoints( self, firstPoint, secondPoint, percentage ):
 		"""
 		Returns the x, y for the point at percentage
@@ -153,7 +115,46 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 			
 			return firstHandleX, firstHandleY, secondHandleX, secondHandleY
 		except Exception as e:
-			self.logToConsole( "tunnify: %s" % str(e) )
+			self.logToConsoleAndError( "tunnify: %s" % str(e) )
+	
+	def processLayer( self, thisLayer, selectionCounts ):
+		"""
+		Each selected layer is processed here.
+		"""
+		try:
+			selection = thisLayer.selection()
+			if selection == (): #empty selection
+				selectionCounts = False
+			
+			for thisPath in thisLayer.paths:
+				numOfNodes = len( thisPath.nodes )
+				nodeIndexes = range( numOfNodes )
+		
+				for i in nodeIndexes:
+					thisNode = thisPath.nodes[i]
+			
+					if (thisNode in selection or not selectionCounts) and thisNode.type == 65:
+						if thisPath.nodes[i-1].type == 65:
+							segmentNodeIndexes = [ i-2, i-1, i, i+1 ]
+						else:
+							segmentNodeIndexes = [ i-1, i, i+1, i+2 ]
+				
+						for x in range(len(segmentNodeIndexes)):
+							segmentNodeIndexes[x] = segmentNodeIndexes[x] % numOfNodes
+				
+						thisSegment = [ [n.x, n.y] for n in [ thisPath.nodes[i] for i in segmentNodeIndexes ] ]
+						newHandles = self.tunnify( thisSegment )
+						if newHandles:
+							xHandle1, yHandle1, xHandle2, yHandle2 = newHandles
+							thisPath.nodes[ segmentNodeIndexes[1] ].x = xHandle1
+							thisPath.nodes[ segmentNodeIndexes[1] ].y = yHandle1
+							thisPath.nodes[ segmentNodeIndexes[2] ].x = xHandle2
+							thisPath.nodes[ segmentNodeIndexes[2] ].y = yHandle2
+			return True, None
+		except Exception as e:
+			errMsg = "processLayer_: %s" % str(e)
+			error = self.logToConsoleAndError( errMsg )
+			return False, error
 	
 	def runFilterWithLayers_error_( self, Layers, Error ):
 		"""
@@ -164,9 +165,14 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 			for k in range(len(Layers)):
 				Layer = Layers[k]
 				Layer.clearSelection()
-				self.processLayer( Layer, False )
+				success, error = self.processLayer( Layer, False )
+				if not success:
+					return False, error
+			return True, None
 		except Exception as e:
-			self.logToConsole( "runFilterWithLayers_error_: %s" % str(e) )
+			errMsg = "runFilterWithLayers_error_: %s" % str(e)
+			error = self.logToConsoleAndError( errMsg )
+			return False, error
 	
 	def runFilterWithLayer_options_error_( self, Layer, Options, Error ):
 		"""
@@ -174,9 +180,15 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 		Leave this as it is.
 		"""
 		try:
-			return self.runFilterWithLayer_error_( self, Layer, Error )
+			success, error = self.runFilterWithLayer_error_( self, Layer, Error )
+			if not success:
+				return False, error
+			else:
+				return True, None
 		except Exception as e:
-			self.logToConsole( "runFilterWithLayer_options_error_: %s" % str(e) )
+			errMsg = "runFilterWithLayer_options_error_: %s" % str(e)
+			error = self.logToConsoleAndError( errMsg )
+			return False, error
 	
 	def runFilterWithLayer_error_( self, Layer, Error ):
 		"""
@@ -184,9 +196,15 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 		and only one layer is selected.
 		"""
 		try:
-			return self.processLayer( Layer, True )
+			success, error = self.processLayer( Layer, True )
+			if not success:
+				return False, error
+			else:
+				return True, None
 		except Exception as e:
-			self.logToConsole( "runFilterWithLayer_error_: %s" % str(e) )
+			errMsg = "runFilterWithLayer_error_: %s" % str(e)
+			error = self.logToConsoleAndError( errMsg )
+			return False, error
 	
 	def processFont_withArguments_( self, Font, Arguments ):
 		"""
@@ -212,14 +230,25 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 			FontMasterId = Font.fontMasterAtIndex_(0).id
 			for thisGlyph in glyphList:
 				Layer = thisGlyph.layerForKey_( FontMasterId )
-				self.processLayer( Layer, False )
+				success, error = self.processLayer( Layer, False )
+				if not success:
+					error = self.logToConsoleAndError( "processFont_withArguments_ choked on %s." % thisGlyph.name )
+					return False, error
+			
+			return True, None
 		except Exception as e:
-			self.logToConsole( "processFont_withArguments_: %s" % str(e) )
+			errMsg = "processFont_withArguments_: %s" % str(e)
+			error = self.logToConsoleAndError( errMsg )
+			return False, error
 	
-	def logToConsole( self, message ):
+	def logToConsoleAndError( self, message ):
 		"""
 		The variable 'message' will be passed to Console.app.
-		Use self.logToConsole( "bla bla" ) for debugging.
+		Use self.logToConsoleAndError( "bla bla" ) for debugging.
 		"""
 		myLog = "Filter %s:\n%s" % ( self.title(), message )
+		print myLog
 		NSLog( myLog )
+		error = NSError.errorWithDomain_code_userInfo_(self.title(), 123, {"NSLocalizedDescription": "Problem with " + self.title(), "NSLocalizedRecoverySuggestion" : message })
+		return error
+
