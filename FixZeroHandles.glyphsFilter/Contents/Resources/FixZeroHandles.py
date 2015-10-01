@@ -122,7 +122,13 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 		Each selected layer is processed here.
 		"""
 		try:
-			selection = thisLayer.selection()
+			try:
+				# until v2.1:
+				selection = thisLayer.selection()
+			except:
+				# since v2.2:
+				selection = thisLayer.selection
+			
 			if selection == (): #empty selection
 				selectionCounts = False
 			
