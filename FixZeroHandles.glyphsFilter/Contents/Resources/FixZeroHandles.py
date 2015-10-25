@@ -129,7 +129,7 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 				# since v2.2:
 				selection = thisLayer.selection
 			
-			if selection == (): #empty selection
+			if selectionCounts and not selection: #empty selection
 				selectionCounts = False
 			
 			for thisPath in thisLayer.paths:
