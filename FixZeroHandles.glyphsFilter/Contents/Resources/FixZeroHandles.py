@@ -12,6 +12,7 @@ if not path in sys.path:
 	sys.path.append( path )
 
 import GlyphsApp
+from GlyphsApp import GSOFFCURVE, GSCURVE, GSLINE # hack for versions before 2.3
 
 GlyphsFilterProtocol = objc.protocolNamed( "GlyphsFilter" )
 
@@ -139,8 +140,8 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 				for i in nodeIndexes:
 					thisNode = thisPath.nodes[i]
 			
-					if (thisNode in selection or not selectionCounts) and thisNode.type == 65:
-						if thisPath.nodes[i-1].type == 65:
+					if (thisNode in selection or not selectionCounts) and thisNode.type == GSOFFCURVE:
+						if thisPath.nodes[i-1].type == GSOFFCURVE:
 							segmentNodeIndexes = [ i-2, i-1, i, i+1 ]
 						else:
 							segmentNodeIndexes = [ i-1, i, i+1, i+2 ]
