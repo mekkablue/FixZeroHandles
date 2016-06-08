@@ -96,6 +96,8 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 			x4, y4 = segment[3]
 			
 			if [x1, y1] == [x2, y2]:
+				if [x3, y3] == [x4, y4]:
+					return True
 				xInt, yInt = x3, y3
 				firstHandlePercentage = self.tunnifyLo
 				secondHandlePercentage = self.tunnifyHi
@@ -136,6 +138,7 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 			for thisPath in thisLayer.paths:
 				numOfNodes = len( thisPath.nodes )
 				nodeIndexes = range( numOfNodes )
+				handleIndexesToBeRemoved = []
 		
 				for i in nodeIndexes:
 					thisNode = thisPath.nodes[i]
@@ -151,12 +154,23 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 				
 						thisSegment = [ [n.x, n.y] for n in [ thisPath.nodes[i] for i in segmentNodeIndexes ] ]
 						newHandles = self.tunnify( thisSegment )
-						if newHandles:
-							xHandle1, yHandle1, xHandle2, yHandle2 = newHandles
-							thisPath.nodes[ segmentNodeIndexes[1] ].x = xHandle1
-							thisPath.nodes[ segmentNodeIndexes[1] ].y = yHandle1
-							thisPath.nodes[ segmentNodeIndexes[2] ].x = xHandle2
-							thisPath.nodes[ segmentNodeIndexes[2] ].y = yHandle2
+						if newHandles != False:
+							if newHandles == True:
+								handleIndexesToBeRemoved.append( segmentNodeIndexes[1] )
+							else:
+								xHandle1, yHandle1, xHandle2, yHandle2 = newHandles
+								thisPath.nodes[ segmentNodeIndexes[1] ].x = xHandle1
+								thisPath.nodes[ segmentNodeIndexes[1] ].y = yHandle1
+								thisPath.nodes[ segmentNodeIndexes[2] ].x = xHandle2
+								thisPath.nodes[ segmentNodeIndexes[2] ].y = yHandle2
+				
+				if handleIndexesToBeRemoved:
+					for thisHandleIndex in list(set(handleIndexesToBeRemoved))[::-1]:
+						try:
+							if thisPath.nodes[thisHandleIndex].type == GSOFFCURVE:
+								thisPath.removeNodeCheck_( thisPath.nodes[thisHandleIndex] )
+						except:
+							print "Warning: Could not convert into straight segment in %s. Please report on: \nhttps://github.com/mekkablue/FixZeroHandles/issues\nThanks." % thisLayer.parent.name
 			return True, None
 		except Exception as e:
 			errMsg = "processLayer_: %s" % str(e)
