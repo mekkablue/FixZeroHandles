@@ -74,7 +74,7 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 		"""
 		This is the human-readable name as it appears in the menu.
 		"""
-		return "Fix Zero Handles MM"
+		return "Fix Zero Handles"
 	
 	def keyEquivalent( self ):
 		""" 
