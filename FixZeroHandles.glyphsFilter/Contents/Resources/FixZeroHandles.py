@@ -5,6 +5,8 @@ import objc
 from Foundation import *
 from AppKit import *
 import sys, os, re
+import itertools
+from math import atan2, sqrt
 
 MainBundle = NSBundle.mainBundle()
 path = MainBundle.bundlePath() + "/Contents/Scripts"
@@ -15,6 +17,14 @@ import GlyphsApp
 from GlyphsApp import GSOFFCURVE, GSCURVE, GSLINE # hack for versions before 2.3
 
 GlyphsFilterProtocol = objc.protocolNamed( "GlyphsFilter" )
+
+
+def angle(p0, p1):
+	return atan2(p1[1] - p0[1], p1[0] - p0[0])
+
+def distance(p0, p1):
+	return sqrt((p0[0] - p1[0]) ** 2 + (p0[1] - p1[1]) ** 2)
+
 
 class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 	tunnifyLo = 0.43
@@ -64,7 +74,7 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 		"""
 		This is the human-readable name as it appears in the menu.
 		"""
-		return "Fix Zero Handles"
+		return "Fix Zero Handles MM"
 	
 	def keyEquivalent( self ):
 		""" 
@@ -73,8 +83,35 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 		Users can set their own shortcuts in System Prefs.
 		"""
 		return None
+	
+	def getBestPoint( self, points, orig_pt, ref_pt0, ref_pt1):
+		# Select the point from a list of float coordinates that will round to the grid the best.
 		
-	def xyAtPercentageBetweenTwoPoints( self, firstPoint, secondPoint, percentage ):
+		points.append(orig_pt)
+		
+		# Choose the sum of the difference of x and y coordinate
+		# This is the simplest method
+		#error_points = zip([abs(p[0] - round(p[0])) + abs(p[1] - round(p[1])) for p in points], points)
+		
+		# Minimize the distance between the rounded point and the free point
+		#error_points = zip([distance(p, (round(p[0]), round(p[1]))) for p in points], points)
+		
+		# Minimize the angle deviation from the angle between ref_pt0 and ref_pt1
+		ref_angle = angle(ref_pt0, ref_pt1)
+		if ref_angle == angle(ref_pt0, (round(orig_pt[0]), round(orig_pt[1]))):
+			return orig_pt
+		else:
+			error_points = zip(
+				[
+					abs(ref_angle - angle(ref_pt0, (round(p[0]), round(p[1])))) for p in points
+				],
+				points
+			)
+		
+		#print "Errors with point:", error_points
+		return sorted(error_points)[0][1]
+	
+	def xyAtPercentageBetweenTwoPoints( self, firstPoint, secondPoint, percentage, allowedHandleLengthError = 0 ):
 		"""
 		Returns the x, y for the point at percentage
 		(where 100 percent is represented as 1.0)
@@ -82,6 +119,26 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 		"""
 		x = firstPoint.x + percentage * ( secondPoint.x - firstPoint.x )
 		y = firstPoint.y + percentage * ( secondPoint.y - firstPoint.y )
+		if allowedHandleLengthError > 0:
+			#print "Optimizing handle length ..."
+			print firstPoint, secondPoint
+			min_percentage = percentage - 0.5 * percentage * allowedHandleLengthError
+			max_percentage = percentage + 0.5 * percentage * allowedHandleLengthError
+			#print "Minimum percentage:", min_percentage
+			#print "Maximum percentage:", max_percentage
+			min_pt = self.xyAtPercentageBetweenTwoPoints( firstPoint, secondPoint, min_percentage)
+			max_pt = self.xyAtPercentageBetweenTwoPoints( firstPoint, secondPoint, max_percentage)
+			sample_count = 2 * int(round(distance(min_pt, max_pt)))
+			#print "Number of samples:", sample_count
+			if sample_count > 0:
+				step = allowedHandleLengthError / float(sample_count)
+				test_percentages = itertools.islice(itertools.count(min_percentage, step), sample_count)
+				points = [self.xyAtPercentageBetweenTwoPoints( firstPoint, secondPoint, p) for p in test_percentages]
+				#print points
+				xo, yo = self.getBestPoint(points, (x, y), (firstPoint.x, firstPoint.y), (secondPoint.x, secondPoint.y))
+				#print "Optimized: (%0.3f, %0.3f) -> (%0.3f, %0.3f)" % (x, y, xo, yo)
+				x = xo
+				y = yo
 		return x, y
 	
 	def tunnify( self, segment ):
@@ -120,6 +177,40 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 		except Exception as e:
 			self.logToConsoleAndError( "tunnify: %s" % str(e) )
 	
+	def isLineOrShouldBeLine( self, segment ):
+		#print "Check Segment type:", segment
+		if len(segment) == 2:
+			#print "Real line"
+			return True
+		if len(segment) == 4:
+			x1, y1 = segment[0]
+			x2, y2 = segment[1]
+			x3, y3 = segment[2]
+			x4, y4 = segment[3]
+			
+			if [x1, y1] == [x2, y2]:
+				if [x3, y3] == [x4, y4]:
+					#print "Quasi line"
+					return True
+		return False
+	
+	def getQuasiLineHandles( self, segment ):
+		try:
+			x1, y1 = segment[0]
+			x2, y2 = segment[1]
+			x3, y3 = segment[2]
+			x4, y4 = segment[3]
+			
+			segmentStartPoint = NSPoint( x1, y1 )
+			segmentFinalPoint = NSPoint( x4, y4 )
+			
+			firstHandleX,  firstHandleY  = self.xyAtPercentageBetweenTwoPoints( segmentStartPoint, segmentFinalPoint, 0.333333, allowedHandleLengthError = 0.075 )
+			secondHandleX, secondHandleY = self.xyAtPercentageBetweenTwoPoints( segmentStartPoint, segmentFinalPoint, 0.666666, allowedHandleLengthError = 0.075 )
+			
+			return firstHandleX, firstHandleY, secondHandleX, secondHandleY
+		except Exception as e:
+			self.logToConsoleAndError( "getQuasiLineHandles: %s" % str(e) )
+	
 	def processLayer( self, thisLayer, selectionCounts ):
 		"""
 		Each selected layer is processed here.
@@ -135,7 +226,7 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 			if selectionCounts and not selection: #empty selection
 				selectionCounts = False
 			
-			for thisPath in thisLayer.paths:
+			for j, thisPath in enumerate(thisLayer.paths):
 				numOfNodes = len( thisPath.nodes )
 				nodeIndexes = range( numOfNodes )
 				handleIndexesToBeRemoved = []
@@ -153,10 +244,26 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 							segmentNodeIndexes[x] = segmentNodeIndexes[x] % numOfNodes
 				
 						thisSegment = [ [n.x, n.y] for n in [ thisPath.nodes[i] for i in segmentNodeIndexes ] ]
+						
+						# Check for the same segment in other layers
+						otherLayerSegments = []
+						for otherLayer in thisLayer.parent.layers:
+							otherLayerSegments.append([ [n.x, n.y] for n in [ otherLayer.paths[j].nodes[i] for i in segmentNodeIndexes ] ])
+						segmentTypes = [self.isLineOrShouldBeLine( s ) for s in otherLayerSegments]
+						#print segmentTypes
 						newHandles = self.tunnify( thisSegment )
 						if newHandles != False:
 							if newHandles == True:
-								handleIndexesToBeRemoved.append( segmentNodeIndexes[1] )
+								if all(segmentTypes):
+									# segment is a "quasi-line" in all layers, remove handles
+									handleIndexesToBeRemoved.append( segmentNodeIndexes[1] )
+								else:
+									newHandles = self.getQuasiLineHandles( thisSegment )
+									xHandle1, yHandle1, xHandle2, yHandle2 = newHandles
+									thisPath.nodes[ segmentNodeIndexes[1] ].x = xHandle1
+									thisPath.nodes[ segmentNodeIndexes[1] ].y = yHandle1
+									thisPath.nodes[ segmentNodeIndexes[2] ].x = xHandle2
+									thisPath.nodes[ segmentNodeIndexes[2] ].y = yHandle2
 							else:
 								xHandle1, yHandle1, xHandle2, yHandle2 = newHandles
 								thisPath.nodes[ segmentNodeIndexes[1] ].x = xHandle1
@@ -167,8 +274,9 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 				if handleIndexesToBeRemoved:
 					for thisHandleIndex in list(set(handleIndexesToBeRemoved))[::-1]:
 						try:
-							if thisPath.nodes[thisHandleIndex].type == GSOFFCURVE:
-								thisPath.removeNodeCheck_( thisPath.nodes[thisHandleIndex] )
+							for layer in thisLayer.parent.layers:
+								if layer.paths[j].nodes[thisHandleIndex].type == GSOFFCURVE:
+									layer.paths[j].removeNodeCheck_( layer.paths[j].nodes[thisHandleIndex] )
 						except:
 							print "Warning: Could not convert into straight segment in %s. Please report on: \nhttps://github.com/mekkablue/FixZeroHandles/issues\nThanks." % thisLayer.parent.name
 			return True, None
