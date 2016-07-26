@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import objc
+import objc, sys, os, re, itertools, traceback
 from Foundation import *
 from AppKit import *
-import sys, os, re
-import itertools
 from math import atan2, sqrt
 
 MainBundle = NSBundle.mainBundle()
@@ -226,6 +224,7 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 			if selectionCounts and not selection: #empty selection
 				selectionCounts = False
 			
+			thisCompString = thisLayer.compareString()
 			for j, thisPath in enumerate(thisLayer.paths):
 				numOfNodes = len( thisPath.nodes )
 				nodeIndexes = range( numOfNodes )
@@ -246,8 +245,9 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 						thisSegment = [ [n.x, n.y] for n in [ thisPath.nodes[i] for i in segmentNodeIndexes ] ]
 						
 						# Check for the same segment in other layers
+						
 						otherLayerSegments = []
-						for otherLayer in thisLayer.parent.layers:
+						for otherLayer in [l for l in thisLayer.parent.layers if l.compareString() == thisCompString]:
 							otherLayerSegments.append([ [n.x, n.y] for n in [ otherLayer.paths[j].nodes[i] for i in segmentNodeIndexes ] ])
 						segmentTypes = [self.isLineOrShouldBeLine( s ) for s in otherLayerSegments]
 						#print segmentTypes
@@ -299,7 +299,8 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 					return False, error
 			return True, None
 		except Exception as e:
-			errMsg = "runFilterWithLayers_error_: %s" % str(e)
+			errMsg = "runFilterWithLayers_error_: %s\n%s" % (str(e), traceback.format_exc())
+			print errMsg
 			error = self.logToConsoleAndError( errMsg )
 			return False, error
 	
