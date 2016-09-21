@@ -2,9 +2,11 @@
 
 This is a plugin for the [Glyphs font editor](http://glyphsapp.com/) by Georg Seifert. It analyzes the path structure of selected layers and will rearrange path segments that contain completely retracted handles, a.k.a. ‘zero handles’. If both handles of a curve segment are retracted, the segment will be turned into a straight line segment.
 
-Zero handles typically appear in outlines imported from other vector apps, such as Adobe Illustrator. Zero handles are considered bad style, or even an error, and can cause a range of problems, especially when you are trying to convert your outlines to TrueType curves.
-
 ![Fixing Zero Handles: Before and After.](FixZeroHandles.png "Fix Zero Handles")
+
+Zero handles typically appear in outlines imported from other vector apps, such as Adobe Illustrator. Zero handles are considered bad style, or even an error, and can cause a range of problems, especially when you are trying to convert your outlines to TrueType curves. Zero handles can seriously mess up the screen rendering of a font, especially on Apple devices. Here is a screenshot from iOS. Can you spot the glyphs that have zero handles?
+
+![iOS screenshot with zero handles.](ZeroHandles.png "Zero Handles in action")
 
 Installation of this filter will add the menu item *Filter > Fix Zero Handles*. You can set a keyboard shortcut in System Preferences.
 
