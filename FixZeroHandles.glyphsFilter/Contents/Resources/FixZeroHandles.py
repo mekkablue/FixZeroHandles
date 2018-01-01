@@ -247,38 +247,42 @@ class GlyphsFilterFixZeroHandles ( NSObject, GlyphsFilterProtocol ):
 						# Check for the same segment in other layers
 						
 						otherLayerSegments = []
-						for otherLayer in [l for l in thisLayer.parent.layers if l.compareString() == thisCompString]:
-							otherLayerSegments.append([ [n.x, n.y] for n in [ otherLayer.paths[j].nodes[i] for i in segmentNodeIndexes ] ])
-						segmentTypes = [self.isLineOrShouldBeLine( s ) for s in otherLayerSegments]
-						#print segmentTypes
-						newHandles = self.tunnify( thisSegment )
-						if newHandles != False:
-							if newHandles == True:
-								if all(segmentTypes):
-									# segment is a "quasi-line" in all layers, remove handles
-									handleIndexesToBeRemoved.append( segmentNodeIndexes[1] )
+						thisGlyph = thisLayer.parent
+						if thisGlyph:
+							for otherLayer in [l for l in thisGlyph.layers if l.compareString() == thisCompString]:
+								otherLayerSegments.append([ [n.x, n.y] for n in [ otherLayer.paths[j].nodes[i] for i in segmentNodeIndexes ] ])
+							segmentTypes = [self.isLineOrShouldBeLine( s ) for s in otherLayerSegments]
+							#print segmentTypes
+							newHandles = self.tunnify( thisSegment )
+							if newHandles != False:
+								if newHandles == True:
+									if all(segmentTypes):
+										# segment is a "quasi-line" in all layers, remove handles
+										handleIndexesToBeRemoved.append( segmentNodeIndexes[1] )
+									else:
+										newHandles = self.getQuasiLineHandles( thisSegment )
+										xHandle1, yHandle1, xHandle2, yHandle2 = newHandles
+										thisPath.nodes[ segmentNodeIndexes[1] ].x = xHandle1
+										thisPath.nodes[ segmentNodeIndexes[1] ].y = yHandle1
+										thisPath.nodes[ segmentNodeIndexes[2] ].x = xHandle2
+										thisPath.nodes[ segmentNodeIndexes[2] ].y = yHandle2
 								else:
-									newHandles = self.getQuasiLineHandles( thisSegment )
 									xHandle1, yHandle1, xHandle2, yHandle2 = newHandles
 									thisPath.nodes[ segmentNodeIndexes[1] ].x = xHandle1
 									thisPath.nodes[ segmentNodeIndexes[1] ].y = yHandle1
 									thisPath.nodes[ segmentNodeIndexes[2] ].x = xHandle2
 									thisPath.nodes[ segmentNodeIndexes[2] ].y = yHandle2
-							else:
-								xHandle1, yHandle1, xHandle2, yHandle2 = newHandles
-								thisPath.nodes[ segmentNodeIndexes[1] ].x = xHandle1
-								thisPath.nodes[ segmentNodeIndexes[1] ].y = yHandle1
-								thisPath.nodes[ segmentNodeIndexes[2] ].x = xHandle2
-								thisPath.nodes[ segmentNodeIndexes[2] ].y = yHandle2
 				
 				if handleIndexesToBeRemoved:
 					for thisHandleIndex in list(set(handleIndexesToBeRemoved))[::-1]:
 						try:
-							for layer in thisLayer.parent.layers:
-								if layer.paths[j].nodes[thisHandleIndex].type == GSOFFCURVE:
-									layer.paths[j].removeNodeCheck_( layer.paths[j].nodes[thisHandleIndex] )
+							thisGlyph = thisLayer.parent
+							if thisGlyph:
+								for layer in thisGlyph.layers:
+									if layer.paths[j].nodes[thisHandleIndex].type == GSOFFCURVE:
+										layer.paths[j].removeNodeCheck_( layer.paths[j].nodes[thisHandleIndex] )
 						except:
-							print "Warning: Could not convert into straight segment in %s. Please report on: \nhttps://github.com/mekkablue/FixZeroHandles/issues\nThanks." % thisLayer.parent.name
+							print "Warning: Could not convert into straight segment in %s. Please report on: \nhttps://github.com/mekkablue/FixZeroHandles/issues\nThanks." % thisGlyph.name
 			return True, None
 		except Exception as e:
 			errMsg = "processLayer_: %s" % str(e)
