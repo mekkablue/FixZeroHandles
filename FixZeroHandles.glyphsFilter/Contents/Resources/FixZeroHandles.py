@@ -2,17 +2,10 @@
 # encoding: utf-8
 
 import objc, sys, os, re, itertools, traceback
-from Foundation import *
-from AppKit import *
 from math import atan2, sqrt
 
-MainBundle = NSBundle.mainBundle()
-path = MainBundle.bundlePath() + "/Contents/Scripts"
-if not path in sys.path:
-	sys.path.append( path )
-
-import GlyphsApp
-from GlyphsApp import GSOFFCURVE, GSCURVE, GSLINE # hack for versions before 2.3
+from GlyphsApp import GSOFFCURVE, GSCURVE, GSLINE
+from GlyphsApp.plugins import *
 
 GlyphsFilterProtocol = objc.protocolNamed( "GlyphsFilter" )
 
