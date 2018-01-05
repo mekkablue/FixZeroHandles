@@ -8,13 +8,12 @@ Zero handles typically appear in outlines imported from other vector apps, such 
 
 ![iOS screenshot with zero handles.](ZeroHandles.png "Zero Handles in action")
 
-Installation of this filter will add the menu item *Filter > Fix Zero Handles*. You can set a keyboard shortcut in System Preferences.
+Installation of this filter will add the menu item *Filter > Fix Zero Handles* (de: *Null-Anfasser beheben*). You can set a keyboard shortcut in System Preferences.
 
 ### Installation
 
-1. Download the complete ZIP file and unpack it, or clone the repository.
-2. Double click the .glyphsFilter file. Confirm the dialog that appears in Glyphs.
-3. Restart Glyphs
+1. In *Window > Plugin Manager,* look for *Fix Zero Handles* and click *Install.*
+2. Restart Glyphs
 
 ### Usage Instructions
 
@@ -24,17 +23,17 @@ Installation of this filter will add the menu item *Filter > Fix Zero Handles*. 
 Alternatively, you can also use it as a custom parameter in an instance:
 
 	Property: Filter
-	Value: GlyphsFilterFixZeroHandles;
+	Value: FixZeroHandles;
 
 At the end of the parameter value, you can hang `exclude:` or `include:`, followed by a comma-separated list of glyph names. This will apply the filter only to the included glyphs, or the glyphs not excluded, respectively.
 
 ### Requirements
 
-The plugin needs Glyphs 1.4.3 or higher, running on OS X 10.7 or later. I can only test it in current OS versions, and I assume it will not work in versions of Mac OS X older than 10.7.
+The plugin needs Glyphs 2.3 or higher, running on OS X 10.9 or later.
 
 ### License
 
-Copyright 2014 Rainer Erich Scheichelbauer (@mekkablue).
+Copyright 2014-2018 Rainer Erich Scheichelbauer (@mekkablue).
 Based on sample code by Georg Seifert (@schriftgestalt).
 
 Licensed under the Apache License, Version 2.0 (the "License");
