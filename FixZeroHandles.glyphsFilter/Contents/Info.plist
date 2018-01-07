@@ -17,15 +17,15 @@
 	<key>CFBundlePackageType</key>
 	<string>BNDL</string>
 	<key>CFBundleVersion</key>
-	<string>16</string>
+	<string>17</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.2</string>
+	<string>1.2.1</string>
 	<key>UpdateFeedURL</key>
 	<string>https://raw.githubusercontent.com/mekkablue/FixZeroHandles/master/FixZeroHandles.glyphsFilter/Contents/Info.plist</string>
 	<key>productPageURL</key>
 	<string>https://github.com/mekkablue/FixZeroHandles</string>
 	<key>productReleaseNotes</key>
-	<string>Updated to new codebase, compatibility update.</string>
+	<string>Small optimizations.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright, Rainer Erich Scheichelbauer, 2014-2018</string>
 	<key>NSPrincipalClass</key>

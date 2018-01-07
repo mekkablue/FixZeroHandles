@@ -48,7 +48,7 @@ class FixZeroHandles(FilterWithoutDialog):
 					for x in range(len(segmentNodeIndexes)):
 						segmentNodeIndexes[x] = segmentNodeIndexes[x] % numOfNodes
 			
-					thisSegment = [ [n.x, n.y] for n in [ thisPath.nodes[i] for i in segmentNodeIndexes ] ]
+					thisSegment = [ (n.x, n.y) for n in [ thisPath.nodes[i] for i in segmentNodeIndexes ] ]
 					
 					# Check for the same segment in other layers
 					
@@ -56,7 +56,7 @@ class FixZeroHandles(FilterWithoutDialog):
 					thisGlyph = thisLayer.parent
 					if thisGlyph:
 						for otherLayer in [l for l in thisGlyph.layers if l.compareString() == thisCompString]:
-							otherLayerSegments.append([ [n.x, n.y] for n in [ otherLayer.paths[j].nodes[i] for i in segmentNodeIndexes ] ])
+							otherLayerSegments.append([ (n.x, n.y) for n in [ otherLayer.paths[j].nodes[i] for i in segmentNodeIndexes ] ])
 						segmentTypes = [self.isLineOrShouldBeLine( s ) for s in otherLayerSegments]
 						#print segmentTypes
 						newHandles = self.tunnify( thisSegment )
@@ -161,13 +161,13 @@ class FixZeroHandles(FilterWithoutDialog):
 		x3, y3 = segment[2]
 		x4, y4 = segment[3]
 		
-		if [x1, y1] == [x2, y2]:
-			if [x3, y3] == [x4, y4]:
+		if (x1, y1) == (x2, y2):
+			if (x3, y3) == (x4, y4):
 				return True
 			xInt, yInt = x3, y3
 			firstHandlePercentage = self.tunnifyLo
 			secondHandlePercentage = self.tunnifyHi
-		elif [x3, y3] == [x4, y4]:
+		elif (x3, y3) == (x4, y4):
 			xInt, yInt = x2, y2
 			firstHandlePercentage = self.tunnifyHi
 			secondHandlePercentage = self.tunnifyLo
@@ -195,8 +195,8 @@ class FixZeroHandles(FilterWithoutDialog):
 			x3, y3 = segment[2]
 			x4, y4 = segment[3]
 			
-			if [x1, y1] == [x2, y2]:
-				if [x3, y3] == [x4, y4]:
+			if (x1, y1) == (x2, y2):
+				if (x3, y3) == (x4, y4):
 					#print "Quasi line"
 					return True
 		return False
@@ -211,7 +211,7 @@ class FixZeroHandles(FilterWithoutDialog):
 		segmentFinalPoint = NSPoint( x4, y4 )
 		
 		firstHandleX,  firstHandleY  = self.xyAtPercentageBetweenTwoPoints( segmentStartPoint, segmentFinalPoint, 0.333333, allowedHandleLengthError = 0.075 )
-		secondHandleX, secondHandleY = self.xyAtPercentageBetweenTwoPoints( segmentStartPoint, segmentFinalPoint, 0.666666, allowedHandleLengthError = 0.075 )
+		secondHandleX, secondHandleY = self.xyAtPercentageBetweenTwoPoints( segmentStartPoint, segmentFinalPoint, 0.666667, allowedHandleLengthError = 0.075 )
 		
 		return firstHandleX, firstHandleY, secondHandleX, secondHandleY
 	
