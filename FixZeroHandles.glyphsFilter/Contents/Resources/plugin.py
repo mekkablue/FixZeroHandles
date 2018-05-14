@@ -131,7 +131,7 @@ class FixZeroHandles(FilterWithoutDialog):
 		y = firstPoint.y + percentage * ( secondPoint.y - firstPoint.y )
 		if allowedHandleLengthError > 0:
 			#print "Optimizing handle length ..."
-			print firstPoint, secondPoint
+			#print firstPoint, secondPoint
 			min_percentage = percentage - 0.5 * percentage * allowedHandleLengthError
 			max_percentage = percentage + 0.5 * percentage * allowedHandleLengthError
 			#print "Minimum percentage:", min_percentage
