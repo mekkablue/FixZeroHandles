@@ -19,6 +19,7 @@ class FixZeroHandles(FilterWithoutDialog):
 		self.menuName = Glyphs.localize({
 			'en': u'Fix Zero Handles',
 			'de': u'Null-Anfasser beheben',
+			'fr': u'Corriger les poignées rétractées',
 		})
 		self.keyboardShortcut = None # With Cmd+Shift
 
