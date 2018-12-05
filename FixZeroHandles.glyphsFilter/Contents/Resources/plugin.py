@@ -21,6 +21,7 @@ class FixZeroHandles(FilterWithoutDialog):
 			'de': u'Null-Anfasser beheben',
 			'fr': u'Corriger les poignées rétractées',
 			'es': u'Corregir manejadores cero',
+			'zh': u'修正单摇臂',
 		})
 		self.keyboardShortcut = None # With Cmd+Shift
 

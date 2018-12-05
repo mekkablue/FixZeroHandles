@@ -8,7 +8,7 @@ Zero handles typically appear in outlines imported from other vector apps, such 
 
 ![iOS screenshot with zero handles.](ZeroHandles.png "Zero Handles in action")
 
-Installation of this filter will add the menu item *Filter > Fix Zero Handles* (de: *Null-Anfasser beheben*). You can set a keyboard shortcut in System Preferences.
+Installation of this filter will add the menu item *Filter > Fix Zero Handles* (de: *Null-Anfasser beheben,* fr: *Corriger les poignées rétractées,* es: *Corregir manejadores cero,* zh: 修正单摇臂). You can set a keyboard shortcut in System Preferences.
 
 ### Installation
 
