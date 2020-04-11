@@ -1,13 +1,27 @@
 # encoding: utf-8
+from __future__ import division, print_function, unicode_literals
+
+###########################################################################################################
+#
+#
+#	Filter without dialog Plugin
+#
+#	Read the docs:
+#	https://github.com/schriftgestalt/GlyphsSDK/tree/master/Python%20Templates/Filter%20without%20Dialog
+#
+#
+###########################################################################################################
 
 import objc
 from GlyphsApp import *
 from GlyphsApp.plugins import *
 from math import atan2, sqrt
 
+@objc.python_method
 def angle(p0, p1):
 	return atan2(p1[1] - p0[1], p1[0] - p0[0])
 
+@objc.python_method
 def distance(p0, p1):
 	return sqrt((p0[0] - p1[0]) ** 2 + (p0[1] - p1[1]) ** 2)
 
@@ -15,6 +29,7 @@ class FixZeroHandles(FilterWithoutDialog):
 	tunnifyLo = 0.43
 	tunnifyHi = 0.73
 	
+	@objc.python_method
 	def settings(self):
 		self.menuName = Glyphs.localize({
 			'en': u'Fix Zero Handles',
@@ -24,7 +39,8 @@ class FixZeroHandles(FilterWithoutDialog):
 			'zh': u'🍭修正单摇臂',
 		})
 		self.keyboardShortcut = None # With Cmd+Shift
-
+	
+	@objc.python_method
 	def filter(self, thisLayer, inEditView, customParameters):
 		selection = thisLayer.selection
 		
@@ -61,7 +77,6 @@ class FixZeroHandles(FilterWithoutDialog):
 						for otherLayer in [l for l in thisGlyph.layers if l.compareString() == thisCompString]:
 							otherLayerSegments.append([ (n.x, n.y) for n in [ otherLayer.paths[j].nodes[i] for i in segmentNodeIndexes ] ])
 						segmentTypes = [self.isLineOrShouldBeLine( s ) for s in otherLayerSegments]
-						#print segmentTypes
 						newHandles = self.tunnify( thisSegment )
 						if newHandles != False:
 							if newHandles == True:
@@ -91,12 +106,9 @@ class FixZeroHandles(FilterWithoutDialog):
 								if layer.paths[j].nodes[thisHandleIndex].type == GSOFFCURVE:
 									layer.paths[j].removeNodeCheck_( layer.paths[j].nodes[thisHandleIndex] )
 					except:
-						print "Warning: Could not convert into straight segment in %s. Please report on: \nhttps://github.com/mekkablue/FixZeroHandles/issues\nThanks." % thisGlyph.name
+						print("Warning: Could not convert into straight segment in %s. Please report on: \nhttps://github.com/mekkablue/FixZeroHandles/issues\nThanks." % thisGlyph.name)
 	
-	def __file__(self):
-		"""Please leave this method unchanged"""
-		return __file__
-	
+	@objc.python_method
 	def getBestPoint( self, points, orig_pt, ref_pt0, ref_pt1):
 		# Select the point from a list of float coordinates that will round to the grid the best.
 		
@@ -121,9 +133,9 @@ class FixZeroHandles(FilterWithoutDialog):
 				points
 			)
 		
-		#print "Errors with point:", error_points
 		return sorted(error_points)[0][1]
 	
+	@objc.python_method
 	def xyAtPercentageBetweenTwoPoints( self, firstPoint, secondPoint, percentage, allowedHandleLengthError = 0 ):
 		"""
 		Returns the x, y for the point at percentage
@@ -133,27 +145,21 @@ class FixZeroHandles(FilterWithoutDialog):
 		x = firstPoint.x + percentage * ( secondPoint.x - firstPoint.x )
 		y = firstPoint.y + percentage * ( secondPoint.y - firstPoint.y )
 		if allowedHandleLengthError > 0:
-			#print "Optimizing handle length ..."
-			#print firstPoint, secondPoint
 			min_percentage = percentage - 0.5 * percentage * allowedHandleLengthError
 			max_percentage = percentage + 0.5 * percentage * allowedHandleLengthError
-			#print "Minimum percentage:", min_percentage
-			#print "Maximum percentage:", max_percentage
 			min_pt = self.xyAtPercentageBetweenTwoPoints( firstPoint, secondPoint, min_percentage)
 			max_pt = self.xyAtPercentageBetweenTwoPoints( firstPoint, secondPoint, max_percentage)
 			sample_count = 2 * int(round(distance(min_pt, max_pt)))
-			#print "Number of samples:", sample_count
 			if sample_count > 0:
 				step = allowedHandleLengthError / float(sample_count)
 				test_percentages = itertools.islice(itertools.count(min_percentage, step), sample_count)
 				points = [self.xyAtPercentageBetweenTwoPoints( firstPoint, secondPoint, p) for p in test_percentages]
-				#print points
 				xo, yo = self.getBestPoint(points, (x, y), (firstPoint.x, firstPoint.y), (secondPoint.x, secondPoint.y))
-				#print "Optimized: (%0.3f, %0.3f) -> (%0.3f, %0.3f)" % (x, y, xo, yo)
 				x = xo
 				y = yo
 		return x, y
 	
+	@objc.python_method
 	def tunnify( self, segment ):
 		"""
 		Calculates the average curvature for Bezier curve segment P1, P2, P3, P4,
@@ -187,10 +193,9 @@ class FixZeroHandles(FilterWithoutDialog):
 		
 		return firstHandleX, firstHandleY, secondHandleX, secondHandleY
 	
+	@objc.python_method
 	def isLineOrShouldBeLine( self, segment ):
-		#print "Check Segment type:", segment
 		if len(segment) == 2:
-			#print "Real line"
 			return True
 		if len(segment) == 4:
 			x1, y1 = segment[0]
@@ -200,10 +205,10 @@ class FixZeroHandles(FilterWithoutDialog):
 			
 			if (x1, y1) == (x2, y2):
 				if (x3, y3) == (x4, y4):
-					#print "Quasi line"
 					return True
 		return False
 	
+	@objc.python_method
 	def getQuasiLineHandles( self, segment ):
 		x1, y1 = segment[0]
 		x2, y2 = segment[1]
@@ -217,4 +222,9 @@ class FixZeroHandles(FilterWithoutDialog):
 		secondHandleX, secondHandleY = self.xyAtPercentageBetweenTwoPoints( segmentStartPoint, segmentFinalPoint, 0.666667, allowedHandleLengthError = 0.075 )
 		
 		return firstHandleX, firstHandleY, secondHandleX, secondHandleY
+	
+	@objc.python_method
+	def __file__(self):
+		"""Please leave this method unchanged"""
+		return __file__
 	
