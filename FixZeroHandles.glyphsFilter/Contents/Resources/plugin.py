@@ -44,12 +44,17 @@ class FixZeroHandles(FilterWithoutDialog):
 	def filter(self, thisLayer, inEditView, customParameters):
 		selection = thisLayer.selection
 		
+		thisGlyph = thisLayer.parent
+		if thisGlyph:
+			allCompatibleLayers = [l for l in thisGlyph.layers if (l.isMasterLayer or l.isSpecialLayer) and l.compareString() == thisLayer.compareString()]
+		else:
+			allCompatibleLayers = (thisLayer,)
+		
 		if inEditView and selection:
 			selectionCounts = True
 		else:
 			selectionCounts = False
 		
-		thisCompString = thisLayer.compareString()
 		for j, thisPath in enumerate(thisLayer.paths):
 			numOfNodes = len( thisPath.nodes )
 			nodeIndexes = range( numOfNodes )
@@ -71,40 +76,37 @@ class FixZeroHandles(FilterWithoutDialog):
 					
 					# Check for the same segment in other layers
 					
-					otherLayerSegments = []
-					thisGlyph = thisLayer.parent
-					if thisGlyph:
-						for otherLayer in [l for l in thisGlyph.layers if l.compareString() == thisCompString]:
-							otherLayerSegments.append([ (n.x, n.y) for n in [ otherLayer.paths[j].nodes[i] for i in segmentNodeIndexes ] ])
-						segmentTypes = [self.isLineOrShouldBeLine( s ) for s in otherLayerSegments]
-						newHandles = self.tunnify( thisSegment )
-						if newHandles != False:
-							if newHandles == True:
-								if all(segmentTypes):
-									# segment is a "quasi-line" in all layers, remove handles
-									handleIndexesToBeRemoved.append( segmentNodeIndexes[1] )
-								else:
-									newHandles = self.getQuasiLineHandles( thisSegment )
-									xHandle1, yHandle1, xHandle2, yHandle2 = newHandles
-									thisPath.nodes[ segmentNodeIndexes[1] ].x = xHandle1
-									thisPath.nodes[ segmentNodeIndexes[1] ].y = yHandle1
-									thisPath.nodes[ segmentNodeIndexes[2] ].x = xHandle2
-									thisPath.nodes[ segmentNodeIndexes[2] ].y = yHandle2
+					allCompatibleLayerSegments = []
+					for compatibleLayer in allCompatibleLayers:
+						allCompatibleLayerSegments.append([ (n.x, n.y) for n in [ compatibleLayer.paths[j].nodes[i] for i in segmentNodeIndexes ] ])
+					segmentTypes = [self.isLineOrShouldBeLine( s ) for s in allCompatibleLayerSegments]
+					newHandles = self.tunnify( thisSegment )
+					if newHandles != False:
+						if newHandles == True:
+							if all(segmentTypes):
+								# segment is a "quasi-line" in all layers, remove handles
+								handleIndexesToBeRemoved.append( segmentNodeIndexes[1] )
 							else:
+								newHandles = self.getQuasiLineHandles( thisSegment )
 								xHandle1, yHandle1, xHandle2, yHandle2 = newHandles
 								thisPath.nodes[ segmentNodeIndexes[1] ].x = xHandle1
 								thisPath.nodes[ segmentNodeIndexes[1] ].y = yHandle1
 								thisPath.nodes[ segmentNodeIndexes[2] ].x = xHandle2
 								thisPath.nodes[ segmentNodeIndexes[2] ].y = yHandle2
+						else:
+							xHandle1, yHandle1, xHandle2, yHandle2 = newHandles
+							thisPath.nodes[ segmentNodeIndexes[1] ].x = xHandle1
+							thisPath.nodes[ segmentNodeIndexes[1] ].y = yHandle1
+							thisPath.nodes[ segmentNodeIndexes[2] ].x = xHandle2
+							thisPath.nodes[ segmentNodeIndexes[2] ].y = yHandle2
 			
+			# collected segment indexes
 			if handleIndexesToBeRemoved:
 				for thisHandleIndex in list(set(handleIndexesToBeRemoved))[::-1]:
 					try:
-						thisGlyph = thisLayer.parent
-						if thisGlyph:
-							for layer in thisGlyph.layers:
-								if layer.paths[j].nodes[thisHandleIndex].type == GSOFFCURVE:
-									layer.paths[j].removeNodeCheck_( layer.paths[j].nodes[thisHandleIndex] )
+						for layer in allCompatibleLayers:
+							if layer.paths[j].nodes[thisHandleIndex].type == GSOFFCURVE:
+								layer.paths[j].removeNodeCheck_( layer.paths[j].nodes[thisHandleIndex] )
 					except:
 						print("Warning: Could not convert into straight segment in %s. Please report on: \nhttps://github.com/mekkablue/FixZeroHandles/issues\nThanks." % thisGlyph.name)
 	
