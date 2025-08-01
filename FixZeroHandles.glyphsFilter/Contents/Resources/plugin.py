@@ -16,30 +16,37 @@ import objc
 from GlyphsApp import *
 from GlyphsApp.plugins import *
 from math import atan2, sqrt
+from AppKit import NSPoint
+import itertools
+
 
 @objc.python_method
 def angle(p0, p1):
 	return atan2(p1[1] - p0[1], p1[0] - p0[0])
 
+
 @objc.python_method
 def distance(p0, p1):
 	return sqrt((p0[0] - p1[0]) ** 2 + (p0[1] - p1[1]) ** 2)
 
+
 class FixZeroHandles(FilterWithoutDialog):
 	tunnifyLo = 0.43
 	tunnifyHi = 0.73
-	
+
+
 	@objc.python_method
 	def settings(self):
 		self.menuName = Glyphs.localize({
-			'en': u'Fix Zero Handles',
-			'de': u'Null-Anfasser beheben',
-			'fr': u'Corriger les poignées rétractées',
-			'es': u'Corregir manejadores cero',
-			'zh': u'🍭修正单摇臂',
+			'en': 'Fix Zero Handles',
+			'de': 'Null-Anfasser beheben',
+			'fr': 'Corriger les poignées rétractées',
+			'es': 'Corregir manejadores cero',
+			'zh': '🍭修正单摇臂',
 		})
 		self.keyboardShortcut = None # With Cmd+Shift
-	
+
+
 	@objc.python_method
 	def filter(self, thisLayer, inEditView, customParameters):
 		selection = thisLayer.selection
@@ -109,7 +116,8 @@ class FixZeroHandles(FilterWithoutDialog):
 								layer.paths[j].removeNodeCheck_( layer.paths[j].nodes[thisHandleIndex] )
 					except:
 						print("Warning: Could not convert into straight segment in %s. Please report on: \nhttps://github.com/mekkablue/FixZeroHandles/issues\nThanks." % thisGlyph.name)
-	
+
+
 	@objc.python_method
 	def getBestPoint( self, points, orig_pt, ref_pt0, ref_pt1):
 		# Select the point from a list of float coordinates that will round to the grid the best.
@@ -136,7 +144,8 @@ class FixZeroHandles(FilterWithoutDialog):
 			)
 		
 		return sorted(error_points)[0][1]
-	
+
+
 	@objc.python_method
 	def xyAtPercentageBetweenTwoPoints( self, firstPoint, secondPoint, percentage, allowedHandleLengthError = 0 ):
 		"""
@@ -160,7 +169,8 @@ class FixZeroHandles(FilterWithoutDialog):
 				x = xo
 				y = yo
 		return x, y
-	
+
+
 	@objc.python_method
 	def tunnify( self, segment ):
 		"""
@@ -194,7 +204,8 @@ class FixZeroHandles(FilterWithoutDialog):
 		secondHandleX, secondHandleY = self.xyAtPercentageBetweenTwoPoints( segmentFinalPoint, intersectionPoint, secondHandlePercentage )
 		
 		return firstHandleX, firstHandleY, secondHandleX, secondHandleY
-	
+
+
 	@objc.python_method
 	def isLineOrShouldBeLine( self, segment ):
 		if len(segment) == 2:
@@ -209,7 +220,8 @@ class FixZeroHandles(FilterWithoutDialog):
 				if (x3, y3) == (x4, y4):
 					return True
 		return False
-	
+
+
 	@objc.python_method
 	def getQuasiLineHandles( self, segment ):
 		x1, y1 = segment[0]
@@ -224,7 +236,8 @@ class FixZeroHandles(FilterWithoutDialog):
 		secondHandleX, secondHandleY = self.xyAtPercentageBetweenTwoPoints( segmentStartPoint, segmentFinalPoint, 0.666667, allowedHandleLengthError = 0.075 )
 		
 		return firstHandleX, firstHandleY, secondHandleX, secondHandleY
-	
+
+
 	@objc.python_method
 	def __file__(self):
 		"""Please leave this method unchanged"""
