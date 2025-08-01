@@ -17,7 +17,7 @@
 	<key>CFBundleVersion</key>
 	<string>28</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright, Rainer Erich Scheichelbauer, 2014-2018</string>
+	<string>Copyright, Rainer Erich Scheichelbauer, 2014-2025</string>
 	<key>NSPrincipalClass</key>
 	<string>FixZeroHandles</string>
 	<key>PyMainFileNames</key>
